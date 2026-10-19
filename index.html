@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang='zh-Hant'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no'>
+<title>倉鼠球大冒險 Hamster Survivor</title>
+<link rel='stylesheet' href='style.css'>
+</head>
+<body>
+<div id='wrap'>
+<canvas id='c'></canvas>
+<div id='start' class='panel show'>
+<h1>🐹 倉鼠球大冒險</h1>
+<h3>① 選擇角色</h3><div class='row' id='chars'></div>
+<h3>② 選擇起始武器</h3><div class='row' id='weps'></div>
+<div id='desc'></div>
+<button class='btn' id='startBtn'>開始遊戲</button>
+</div>
+<div id='lvl' class='panel mid'><h1 id='lvlT'>🌻 升級!選一個天賦</h1><div id='cards'></div></div>
+<div id='end' class='panel mid'><h1 id='endT'></h1><p id='endS'></p><button class='btn' id='againBtn'>回到選角畫面</button></div>
+</div>
+<script src='game.js'></script>
+</body>
+</html>
