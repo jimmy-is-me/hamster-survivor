@@ -10,17 +10,27 @@ let S=null,state='menu',last=0;
 
 /* ===== 平衡參數(想調難度改這裡)===== */
 const BAL={
- hpGrow:150,      // 小怪血量隨時間成長:x(1+t/hpGrow)
- dmgGrow:360,     // 小怪傷害隨時間成長:x(1+t/dmgGrow)
- spawnStart:1.4,  // 初始生怪間隔(秒)
- spawnMin:.3,     // 最短生怪間隔
- spawnDecay:150,  // 間隔縮短速度
- invBase:.6,      // 受傷後基礎無敵秒數
- levelHeal:5,     // 升級回復血量
- xpBase:5,xpLin:3.5,xpQuad:.15,
- dropRate:.06
+ hpGrow:220,      // 小怪血量隨時間成長:x(1+t/hpGrow)
+ dmgGrow:600,     // 小怪傷害隨時間成長:x(1+t/dmgGrow)
+ spawnStart:1.8,  // 初始生怪間隔(秒)
+ spawnMin:.45,    // 最短生怪間隔
+ spawnDecay:200,  // 間隔縮短速度
+ invBase:.8,      // 受傷後基礎無敵秒數
+ levelHeal:8,     // 升級回復血量
+ xpBase:5,xpLin:3,xpQuad:.1,
+ dropRate:.09
 };
 const needFor=lv=>Math.floor(BAL.xpBase+BAL.xpLin*(lv-1)+BAL.xpQuad*(lv-1)*(lv-1));
+
+/* ===== 難度選擇 ===== */
+const DIFFS=[
+ {n:'😊 簡單',dm:.7,hp:.8,sp:1.25,d:'怪物傷害 -30%、血量 -20%、出怪較慢'},
+ {n:'🙂 普通',dm:1,hp:1,sp:1,d:'標準難度'},
+ {n:'😈 困難',dm:1.4,hp:1.3,sp:.8,d:'怪物傷害 +40%、血量 +30%、出怪更快'}
+];
+let diffIdx=0;
+try{const v=+localStorage.getItem('hs_diff');diffIdx=v>=0&&v<DIFFS.length?v:0}catch(e){}
+function setDiff(i){diffIdx=(i+DIFFS.length)%DIFFS.length;try{localStorage.setItem('hs_diff',diffIdx)}catch(e){}buildMenu()}
 
 /* ===== 存檔 ===== */
 const SAVE={ach:{},tot:{kills:0,games:0,wins:0}};
@@ -111,15 +121,15 @@ $('speedBtn').onclick=e=>{setSpeed((speedIdx+1)%SPEEDS.length);e.target.blur()};
 setSpeed(speedIdx);
 
 /* ===== 角色(hp 為血量點數)===== */
-const CH0={hp:100,spd:1,dm:1,cdm:1,inv:1,xp:1,crit:0,mag:0,aura:false,regen:0};
+const CH0={hp:120,spd:1,dm:1,cdm:1,inv:1,xp:1,crit:0,mag:0,aura:false,regen:0};
 const CHARS={
- hamster:{ic:'🐹',name:'圓滾滾倉鼠',xp:1.1,desc:'均衡型。血量 100,經驗值獲取 +10%。'},
- rabbit:{ic:'🐰',name:'疾風兔兔',hp:80,spd:1.15,inv:1.5,desc:'血量 80、移速 +15%,受傷後無敵時間 x1.5。'},
- bear:{ic:'🐻',name:'壯壯熊熊',hp:140,spd:.9,dm:1.15,desc:'血量 140、傷害 +15%,但移動較慢。'},
+ hamster:{ic:'🐹',name:'圓滾滾倉鼠',xp:1.1,desc:'均衡型。血量 120,經驗值獲取 +10%。'},
+ rabbit:{ic:'🐰',name:'疾風兔兔',hp:100,spd:1.15,inv:1.5,desc:'血量 100、移速 +15%,受傷後無敵時間 x1.5。'},
+ bear:{ic:'🐻',name:'壯壯熊熊',hp:170,spd:.9,dm:1.15,desc:'血量 170、傷害 +15%,但移動較慢。'},
  cat:{ic:'🐱',name:'機靈小貓',spd:1.05,cdm:.85,desc:'所有武器冷卻 -15%,移速 +5%。'},
  fox:{ic:'🦊',name:'暴擊狐狸',crit:.15,desc:'天生 15% 暴擊率。'},
  frog:{ic:'🐸',name:'吸力青蛙',spd:1.05,mag:50,desc:'經驗值吸附範圍 +50px,移速 +5%。'},
- penguin:{ic:'🐧',name:'冰霜企鵝',hp:120,spd:.95,aura:true,desc:'血量 120,身邊 110px 內的敵人移速 -30%。'},
+ penguin:{ic:'🐧',name:'冰霜企鵝',hp:150,spd:.95,aura:true,desc:'血量 150,身邊 110px 內的敵人移速 -30%。'},
  unicorn:{ic:'🦄',name:'夢幻獨角獸',dm:1.05,regen:.6,desc:'每秒自動回復 0.6 HP,傷害 +5%。'}
 };
 for(const k in CHARS)CHARS[k]=Object.assign({},CH0,CHARS[k]);
@@ -127,8 +137,10 @@ for(const k in CHARS)CHARS[k]=Object.assign({},CH0,CHARS[k]);
 /* ===== 武器 / 被動 / 裝備 ===== */
 const WEAPONS={
  seed:{ic:'🌻',name:'葵花子飛鏢',type:'weapon',desc:l=>`朝最近敵人發射 ${l} 顆,穿透 ${l+1} 次`},
- gum:{ic:'🫧',name:'環繞泡泡糖',type:'weapon',desc:l=>`${[2,3,4,5,6][l-1]} 個泡泡護盾,旋轉更快並彈開敵人`},
+ gum:{ic:'🎈',name:'環繞泡泡糖',type:'weapon',desc:l=>`${[2,3,4,5,6][l-1]} 個泡泡護盾,旋轉更快並彈開敵人`},
  pop:{ic:'🍿',name:'爆裂爆米花',type:'weapon',desc:l=>`每 3 秒落下 ${l} 顆玉米粒,爆炸範圍 ${50+l*15}px`},
+ fw:{ic:'🎆',name:'彩虹煙火',type:'weapon',desc:l=>`每 1.6 秒朝四面八方射出 ${[4,6,8,10,12][l-1]} 發彩虹彈,穿透 2 次`},
+ chili:{ic:'🌶️',name:'辣椒光環',type:'weapon',desc:l=>`身邊 ${60+l*12}px 火圈持續灼傷敵人(每 0.5 秒 ${(1+l*.6).toFixed(1)} 傷害)`},
  berry:{ic:'🍓',name:'草莓追蹤彈',type:'weapon',desc:l=>`發射 ${l} 顆追蹤草莓,命中範圍爆炸(半徑 ${20+l*8}px)`},
  bolt:{ic:'🍭',name:'棒棒糖閃電',type:'weapon',desc:l=>`每 ${(2.6-l*.25).toFixed(2)} 秒電擊 ${l+1} 隻敵人並彈跳`},
  cookie:{ic:'🍪',name:'迴力餅乾',type:'weapon',desc:l=>`擲出 ${l} 片餅乾,去程回程都會傷敵(射程 ${150+l*30}px)`},
@@ -141,11 +153,14 @@ const WEAPONS={
  power:{ic:'🍬',name:'甜蜜力量',type:'passive',desc:l=>`所有武器傷害 +${l*20}%`},
  clover:{ic:'🍀',name:'幸運四葉草',type:'passive',desc:l=>`暴擊率 +${l*8}%,特殊掉落率 +${l*20}%`},
  milk:{ic:'🥛',name:'營養牛奶',type:'passive',desc:l=>`每秒回復 ${(l*.4).toFixed(1)} HP`},
- helmet:{ic:'🪖',name:'安全帽',type:'equip',max:3,desc:l=>`受到傷害 -${l*12}%`},
+ lens:{ic:'🔍',name:'放大鏡',type:'passive',desc:l=>`範圍型武器(泡泡、爆米花、冰環、蜂蜜、光環)範圍 +${l*10}%`},
+ watch:{ic:'⏱️',name:'精準懷錶',type:'passive',desc:l=>`所有武器冷卻 -${l*8}%`},
+ helmet:{ic:'⛑️',name:'安全帽',type:'equip',max:3,desc:l=>`受到傷害 -${l*12}%`},
  ring:{ic:'💍',name:'暴擊戒指',type:'equip',max:3,desc:l=>`暴擊率 +${l*5}%,暴擊傷害 +${l*25}%`},
  boots:{ic:'🥾',name:'彈力靴',type:'equip',max:3,desc:l=>`移速 +${l*5}%,受傷後無敵 +${(l*.15).toFixed(2)} 秒`},
  cape:{ic:'🧥',name:'反擊披風',type:'equip',max:3,desc:l=>`受傷時震退周圍敵人並造成 ${l*6} 傷害`},
  glasses:{ic:'🕶️',name:'貪婪眼鏡',type:'equip',max:3,desc:l=>`經驗值 +${l*15}%`},
+ scarf:{ic:'🧣',name:'吸血圍巾',type:'equip',max:3,desc:l=>`每擊殺一隻敵人回復 ${(l*.2).toFixed(1)} HP`},
  amulet:{ic:'📿',name:'復活護符',type:'equip',max:2,desc:l=>`額外復活 ${l} 次(回復 50% 血量並短暫無敵)`}
 };
 const WKEYS=Object.keys(WEAPONS),START_WEAPONS=WKEYS.filter(k=>WEAPONS[k].type==='weapon');
@@ -153,23 +168,23 @@ const TAG={weapon:['升級','up'],passive:['升級','pas'],equip:['升級','eq']
 
 /* ===== 小怪圖鑑(dm=碰撞傷害,bd=子彈傷害)===== */
 const MOBS={
- pudding:{hp:3,sp:50,r:14,e:'🍮',dm:8},
- donut:{hp:2,sp:100,r:12,e:'🍩',dm:6},
- marsh:{hp:3,sp:45,r:13,e:'☁️',dm:8,rng:1,bd:7},
- mochi:{hp:10,sp:32,r:19,e:'🍡',dm:14,gems:2},
- snow:{hp:4,sp:55,r:14,e:'🍧',dm:8,split:1},
- ice:{hp:1,sp:85,r:9,e:'🧊',dm:5},
- choc:{hp:4,sp:60,r:15,e:'🍫',dm:12,dash:1},
- cherry:{hp:2,sp:90,r:12,e:'🍒',dm:15,bomb:1},
- mage:{hp:5,sp:40,r:15,e:'🍰',dm:8,mage:1,bd:7},
+ pudding:{hp:3,sp:50,r:14,e:'🍮',dm:6},
+ donut:{hp:2,sp:100,r:12,e:'🍩',dm:5},
+ marsh:{hp:3,sp:45,r:13,e:'☁️',dm:6,rng:1,bd:5},
+ mochi:{hp:10,sp:32,r:19,e:'🍡',dm:10,gems:2},
+ snow:{hp:4,sp:55,r:14,e:'🍧',dm:6,split:1},
+ ice:{hp:1,sp:85,r:9,e:'💠',dm:4},
+ choc:{hp:4,sp:60,r:15,e:'🍫',dm:9,dash:1},
+ cherry:{hp:2,sp:90,r:12,e:'🍒',dm:12,bomb:1},
+ mage:{hp:5,sp:40,r:15,e:'🍰',dm:6,mage:1,bd:5},
  lucky:{hp:5,sp:90,r:13,e:'🥠',dm:0,flee:1,life:12}
 };
 
 /* ===== Boss ===== */
 const BOSSES={
- donutb:{e:'🍩',name:'暴走巨無霸甜甜圈',hp:160,r:38,sp:55,dm:18},
- queen:{e:'🎂',name:'蛋糕女王',hp:260,r:40,sp:35,dm:18},
- sundae:{e:'🍓',name:'超級草莓巨無霸聖代',hp:520,r:50,sp:28,dm:22}
+ donutb:{e:'🍩',name:'暴走巨無霸甜甜圈',hp:160,r:38,sp:55,dm:14},
+ queen:{e:'🎂',name:'蛋糕女王',hp:260,r:40,sp:35,dm:14},
+ sundae:{e:'🍓',name:'超級草莓巨無霸聖代',hp:520,r:50,sp:28,dm:16}
 };
 const BOSS_TIMELINE=[[60,'donutb'],[120,'queen'],[170,'sundae']];
 
@@ -198,7 +213,7 @@ const ACH=[
 ];
 const UNLOCK={
  chars:{bear:'kill100',fox:'boss1',frog:'lv10',penguin:'boss2',unicorn:'win'},
- items:{berry:'lv10',bolt:'kill500',cookie:'boss1',nova:'boss2',honey:'weapons5',turret:'win',clover:'lv10',ring:'kill100',cape:'boss1',amulet:'boss2'}
+ items:{berry:'kill100',bolt:'kill500',cookie:'boss1',nova:'boss2',honey:'weapons5',turret:'win',amulet:'boss2'}
 };
 const charOK=k=>!UNLOCK.chars[k]||SAVE.ach[UNLOCK.chars[k]];
 const itemOK=k=>!UNLOCK.items[k]||SAVE.ach[UNLOCK.items[k]];
@@ -236,16 +251,19 @@ $('achBack').onclick=e=>{e.target.blur();AU.sfx('ui');$('ach').classList.remove(
 /* ===== 選角介面 ===== */
 let selChar='hamster',selWep='seed';
 function buildMenu(){
- const ch=$('chars'),wp=$('weps');ch.innerHTML='';wp.innerHTML='';
+ const ch=$('chars'),wp=$('weps'),df=$('diffs');ch.innerHTML='';wp.innerHTML='';df.innerHTML='';
  for(const k in CHARS){const c=CHARS[k],lock=!charOK(k),d=document.createElement('div');d.className='opt'+(k===selChar?' sel':'')+(lock?' lock':'');
   d.innerHTML=`<span class='ic'>${lock?'🔒':c.ic}</span><b>${c.name}</b>`;d.onclick=()=>{AU.sfx('ui');selChar=k;buildMenu()};ch.appendChild(d)}
  START_WEAPONS.forEach(k=>{const w=WEAPONS[k],lock=!itemOK(k),d=document.createElement('div');d.className='opt'+(k===selWep?' sel':'')+(lock?' lock':'');
   d.innerHTML=`<span class='ic'>${lock?'🔒':w.ic}</span><b>${w.name}</b>`;d.onclick=()=>{AU.sfx('ui');selWep=k;buildMenu()};wp.appendChild(d)});
+ DIFFS.forEach((x,i)=>{const [ic,nm]=x.n.split(' '),d=document.createElement('div');d.className='opt'+(i===diffIdx?' sel':'');
+  d.innerHTML=`<span class='ic'>${ic}</span><b>${nm}</b>`;d.onclick=()=>{AU.sfx('ui');setDiff(i)};df.appendChild(d)});
  const msg=[];
  if(!charOK(selChar))msg.push(`🔒 ${CHARS[selChar].name} 解鎖條件:${achText(UNLOCK.chars[selChar])}`);
  else msg.push(`${CHARS[selChar].name}:${CHARS[selChar].desc}`);
  if(!itemOK(selWep))msg.push(`🔒 ${WEAPONS[selWep].name} 解鎖條件:${achText(UNLOCK.items[selWep])}`);
  else msg.push(`${WEAPONS[selWep].name}:${WEAPONS[selWep].desc(1)}`);
+ msg.push(`難度 ${DIFFS[diffIdx].n}:${DIFFS[diffIdx].d}`);
  $('desc').innerHTML=msg.join('<br>');
 }
 buildMenu();
@@ -256,10 +274,10 @@ function startGame(){
  if(!charOK(selChar)||!itemOK(selWep)){buildMenu();return}
  AU.sfx('ui');
  const c=CHARS[selChar],w={};WKEYS.forEach(k=>w[k]=0);w[selWep]=1;
- S={t:0,ch:c,player:{x:0,y:0,r:18,hp:c.hp,maxhp:c.hp,inv:0},w,
-  cd:{seed:0,pop:1,berry:.5,bolt:1,cookie:.5,nova:1,honey:1,turret:2},gumAng:0,gums:[],
+ S={t:0,ch:c,D:DIFFS[diffIdx],player:{x:0,y:0,r:18,hp:c.hp,maxhp:c.hp,inv:0},w,
+  cd:{seed:0,pop:1,berry:.5,bolt:1,cookie:.5,nova:1,honey:1,turret:2,fw:1},chiliT:0,fwA:0,gumAng:0,gums:[],
   enemies:[],gems:[],shots:[],ebul:[],pops:[],trail:[],fx:[],missiles:[],cookies:[],bolts:[],novas:[],puddles:[],turrets:[],drops:[],
-  xp:0,lv:1,need:needFor(1),kills:0,spawnT:0,waves:{},bossDone:{},freeze:0,shield:0,slow:0,rage:0,rev:0,dropsGot:0,newAch:[],warn:null,
+  xp:0,lv:1,need:needFor(1),kills:0,spawnT:0,waves:{},bossDone:{},freeze:0,shield:0,slow:0,rage:0,rev:0,dropsGot:0,newAch:[],warn:null,rerolls:2,free:false,
   joy:{on:false,id:null,sx:0,sy:0,dx:0,dy:0},keys:{}};
  $('start').classList.remove('show');$('speedBtn').style.display='block';state='play';last=performance.now();AU.mode='game';
 }
@@ -285,11 +303,13 @@ addEventListener('keydown',e=>{
   if(k==='enter')startGame();
   else if(k==='arrowleft'||k==='arrowright'){selChar=cyc(Object.keys(CHARS).filter(charOK),selChar,k==='arrowright'?1:-1);AU.sfx('ui');buildMenu()}
   else if(k==='arrowup'||k==='arrowdown'){selWep=cyc(START_WEAPONS.filter(itemOK),selWep,k==='arrowdown'?1:-1);AU.sfx('ui');buildMenu()}
+  else if(k==='d'){AU.sfx('ui');setDiff(diffIdx+1)}
   else if(k==='t')$('achBtn').click();
  }else if(state==='ach'){
   if(k==='escape'||k==='enter'||k==='t')$('achBack').click();
  }else if(state==='pause'){
   const i=parseInt(k);if(i>=1&&i<=3){const c=$('cards').children[i-1];if(c)c.click()}
+  else if(k==='r')$('rerollBtn').click();
  }else if(state==='end'){
   if(k==='enter')$('againBtn').click();
  }else if(k==='p'||k==='escape'){
@@ -304,7 +324,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 function nearest(x,y,list){let b=null,bd=1e9;for(const e of (list||S.enemies)){if(e.dead)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;b=e}}return b}
 function visible(){const p=S.player;return S.enemies.filter(e=>!e.dead&&Math.abs(e.x-p.x)<W/2+30&&Math.abs(e.y-p.y)<H*.6+30)}
 function mk(type,x,y){
- const T=MOBS[type],hp=T.hp*(1+S.t/BAL.hpGrow);
+ const T=MOBS[type],hp=T.hp*(1+S.t/BAL.hpGrow)*S.D.hp;
  S.enemies.push({...T,type,x,y,hp,mhp:hp,kx:0,ky:0,hit:0,gh:0,fz:0,st:'walk',cdT:rnd(1,3)});
 }
 function pickType(){
@@ -322,15 +342,15 @@ function spawnEnemy(type,ang,dist){
  mk(type,p.x+Math.cos(a)*d,p.y+Math.sin(a)*d);
 }
 function mkBoss(kind){
- const B=BOSSES[kind],p=S.player,a=rnd(0,6.283),d=Math.hypot(W,H)/2+80;
- S.enemies.push({type:'boss',boss:true,kind,x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,hp:B.hp,mhp:B.hp,sp:B.sp,r:B.r,e:B.e,dm:B.dm,kx:0,ky:0,hit:0,gh:0,fz:0,tm:0,st:'walk',cdT:3,sh:2,sm:6,sa:0});
+ const B=BOSSES[kind],p=S.player,a=rnd(0,6.283),d=Math.hypot(W,H)/2+80,hp=B.hp*S.D.hp;
+ S.enemies.push({type:'boss',boss:true,kind,x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,hp,mhp:hp,sp:B.sp,r:B.r,e:B.e,dm:B.dm,kx:0,ky:0,hit:0,gh:0,fz:0,tm:0,st:'walk',cdT:3,sh:2,sm:6,sa:0});
  S.warn={txt:'⚠️ '+B.name+' 來襲!',t:3.5};AU.sfx('boss');
 }
-function heal(n){const p=S.player,h=Math.min(p.maxhp,p.hp+n)-p.hp;p.hp+=h;if(h>0)S.fx.push({x:p.x,y:p.y-30,t:.7,txt:'+'+Math.round(h),c:'#2ecc71'})}
+function heal(n,quiet){const p=S.player,h=Math.min(p.maxhp,p.hp+n)-p.hp;p.hp+=h;if(h>0&&!quiet)S.fx.push({x:p.x,y:p.y-30,t:.7,txt:'+'+Math.round(h),c:'#2ecc71'})}
 function hurt(n){
  const p=S.player,w=S.w;
  if(p.inv>0||S.shield>0||state!=='play')return;
- const dm=Math.max(1,Math.round(n*(1+S.t/BAL.dmgGrow)*(1-.12*w.helmet)));
+ const dm=Math.max(1,Math.round(n*(1+S.t/BAL.dmgGrow)*S.D.dm*(1-.12*w.helmet)));
  p.hp-=dm;p.inv=BAL.invBase*S.ch.inv+.15*w.boots;
  S.fx.push({x:p.x,y:p.y-30,t:.7,txt:'-'+dm,c:'#ff3b30'});AU.sfx('hurt');
  if(w.cape){for(const e of S.enemies){if(e.dead)continue;const d=Math.hypot(e.x-p.x,e.y-p.y);
@@ -351,6 +371,7 @@ function dmg(e,n){
 function die(e){
  e.dead=true;S.kills++;AU.sfx('kill');
  if(S.kills===1)ach('first');if(S.kills===100)ach('kill100');if(S.kills===500)ach('kill500');
+ if(S.w.scarf)heal(.2*S.w.scarf,true);
  const k=e.boss?15:(e.gems||1),p=S.player;
  for(let i=0;i<k;i++)S.gems.push({x:e.x+(k>1?rnd(-25,25):0),y:e.y+(k>1?rnd(-25,25):0),v:1,fly:false,s:4});
  S.fx.push({x:e.x,y:e.y,t:.4,txt:'✨'});
@@ -386,27 +407,27 @@ function finish(win){
  if(SAVE.tot.kills>=2000)ach('total2000');
  persist();AU.mode='menu';AU.sfx(win?'win':'lose');
  $('endT').textContent=win?'🎉 通關成功!':'💥 倉鼠球破裂了…';
- $('endS').textContent=`${S.ch.name}|存活 ${Math.floor(S.t)} 秒|擊殺 ${S.kills}|等級 ${S.lv}`;
+ $('endS').textContent=`${S.ch.name}|${S.D.n}|存活 ${Math.floor(S.t)} 秒|擊殺 ${S.kills}|等級 ${S.lv}`;
  $('endA').innerHTML=S.newAch.length?'🏆 本局新成就<br>'+S.newAch.map(a=>`${a.ic} ${a.name}`).join('<br>'):'';
  $('end').classList.add('show');
 }
 
-/* ===== 升級 / 寶箱 ===== */
-function levelUp(free){
- state='pause';if(!free)AU.sfx('level');
- if(!free){
-  S.lv++;S.xp-=S.need;S.need=needFor(S.lv);heal(BAL.levelHeal);
-  if(S.lv===10)ach('lv10');if(S.lv===20)ach('lv20');
- }
- $('lvlT').textContent=free?'🎁 寶箱!免費獲得一個天賦':'🌻 升級!選一個天賦';
+/* ===== 升級 / 寶箱(三張卡盡量涵蓋 武器/被動/裝備,可重抽)===== */
+function rollChoices(free){
  const keys=WKEYS.filter(k=>S.w[k]<(WEAPONS[k].max||5)&&itemOK(k)).sort(()=>Math.random()-.5);
- if(free)keys.sort((a,b)=>(WEAPONS[b].type==='equip')-(WEAPONS[a].type==='equip'));
- const pool=keys.slice(0,3),box=$('cards');box.innerHTML='';
+ const types=free?['equip','weapon','passive']:['weapon','passive','equip'].sort(()=>Math.random()-.5);
+ const pick=[];
+ for(const t of types){const k=keys.find(x=>WEAPONS[x].type===t&&!pick.includes(x));if(k)pick.push(k)}
+ for(const k of keys){if(pick.length>=3)break;if(!pick.includes(k))pick.push(k)}
+ return pick.slice(0,3);
+}
+function renderCards(){
+ const box=$('cards');box.innerHTML='';
  const addCard=(ic,title,desc,tag,cls,fn)=>{const d=document.createElement('div');d.className='card';
   const no=desk?`[${box.children.length+1}] `:'';
   d.innerHTML=`<span class='ic'>${ic}</span><div><b>${no}${title}</b><span class='tag ${cls}'>${tag}</span><br>${desc}</div>`;
   d.onclick=()=>{AU.sfx('ui');$('lvl').classList.remove('show');fn();state='play';last=performance.now();if(S.xp>=S.need)levelUp()};box.appendChild(d)};
- pool.forEach(k=>{const w=WEAPONS[k],l=S.w[k]+1,isNew=l===1,tg=TAG[w.type];
+ rollChoices(S.free).forEach(k=>{const w=WEAPONS[k],l=S.w[k]+1,isNew=l===1,tg=TAG[w.type];
   addCard(w.ic,`${w.name} Lv.${l}`,w.desc(l),isNew?'NEW':tg[0],isNew?'':tg[1],()=>{
    S.w[k]=l;
    if(k==='heart'){S.player.maxhp+=15;heal(15)}
@@ -414,8 +435,21 @@ function levelUp(free){
    checkBuild();
   })});
  while(box.children.length<3)addCard('🍗','烤雞腿','回復 40 HP','補給','pas',()=>heal(40));
- $('lvl').classList.add('show');
+ const rb=$('rerollBtn');rb.style.display=S.rerolls>0?'block':'none';
+ rb.textContent=`🎲 重抽 (剩 ${S.rerolls} 次${desk?',按 R':''})`;
 }
+function levelUp(free){
+ state='pause';if(!free)AU.sfx('level');
+ S.free=!!free;
+ if(!free){
+  S.lv++;S.xp-=S.need;S.need=needFor(S.lv);heal(BAL.levelHeal);
+  if(S.lv%5===0)S.rerolls++;
+  if(S.lv===10)ach('lv10');if(S.lv===20)ach('lv20');
+ }
+ $('lvlT').textContent=free?'🎁 寶箱!免費獲得一個天賦':'🌻 升級!選一個天賦';
+ renderCards();$('lvl').classList.add('show');
+}
+$('rerollBtn').onclick=e=>{e.target.blur();if(state==='pause'&&S.rerolls>0){S.rerolls--;AU.sfx('ui');renderCards()}};
 
 /* ===== 衝刺 / Boss AI ===== */
 function dashAI(e,dt,ux,uy,v,iv,spd,wt,dur){
@@ -426,7 +460,7 @@ function dashAI(e,dt,ux,uy,v,iv,spd,wt,dur){
 }
 function bossAI(e,dt,ux,uy,v){
  const dash=(iv,spd)=>{[v,ux,uy]=dashAI(e,dt,ux,uy,v,iv,spd,.6,.8)};
- const ring=(n,sp,off)=>{if(S.ebul.length>300)return;for(let i=0;i<n;i++){const a=(off||0)+i*6.283/n;S.ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:6,r:8,d:9})}};
+ const ring=(n,sp,off)=>{if(S.ebul.length>300)return;for(let i=0;i<n;i++){const a=(off||0)+i*6.283/n;S.ebul.push({x:e.x,y:e.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:6,r:8,d:7})}};
  const summon=(t,n)=>{for(let i=0;i<n;i++){const a=i*6.283/n;mk(t,e.x+Math.cos(a)*(e.r+30),e.y+Math.sin(a)*(e.r+30))}};
  if(e.kind==='donutb')dash(3.5,430);
  else if(e.kind==='queen'){
@@ -436,7 +470,7 @@ function bossAI(e,dt,ux,uy,v){
   const r=e.hp/e.mhp;
   if(r>.6){e.sh-=dt;if(e.sh<=0){e.sh=2.5;ring(12,130)}}
   else if(r>.3){
-   e.sh-=dt;if(e.sh<=0){e.sh=.25;e.sa+=.55;S.ebul.push({x:e.x,y:e.y,vx:Math.cos(e.sa)*150,vy:Math.sin(e.sa)*150,life:6,r:8,d:9})}
+   e.sh-=dt;if(e.sh<=0){e.sh=.25;e.sa+=.55;S.ebul.push({x:e.x,y:e.y,vx:Math.cos(e.sa)*150,vy:Math.sin(e.sa)*150,life:6,r:8,d:7})}
    e.sm-=dt;if(e.sm<=0){e.sm=7;summon('donut',3)}
   }else{e.sh-=dt;if(e.sh<=0){e.sh=2;ring(16,150,e.tm)}dash(4,380)}
  }
@@ -446,7 +480,7 @@ function bossAI(e,dt,ux,uy,v){
 
 /* ===== 更新 ===== */
 function update(dt){
- const p=S.player,w=S.w,cdm=S.ch.cdm*(S.rage>0?.6:1);
+ const p=S.player,w=S.w,cdm=S.ch.cdm*(S.rage>0?.6:1)*(1-.08*w.watch),ar=1+.1*w.lens;
  S.t+=dt;p.inv=Math.max(0,p.inv-dt);
  S.freeze=Math.max(0,S.freeze-dt);S.shield=Math.max(0,S.shield-dt);S.slow=Math.max(0,S.slow-dt);S.rage=Math.max(0,S.rage-dt);
  if(S.warn){S.warn.t-=dt;if(S.warn.t<=0)S.warn=null}
@@ -464,11 +498,11 @@ function update(dt){
 
  /* 時間軸 */
  S.spawnT-=dt;
- const rate=Math.max(BAL.spawnMin,BAL.spawnStart-S.t/BAL.spawnDecay);
+ const rate=Math.max(BAL.spawnMin,BAL.spawnStart-S.t/BAL.spawnDecay)*S.D.sp;
  if(S.spawnT<=0){S.spawnT=rate;
   spawnEnemy(pickType());
   if(S.t>90&&Math.random()<.4)spawnEnemy('pudding')}
- [[30,8],[45,10],[80,14],[100,20],[130,25],[155,30]].forEach(([t,n])=>{if(S.t>=t&&!S.waves[t]){S.waves[t]=1;const a=rnd(0,6.283);
+ [[30,6],[45,8],[80,10],[100,14],[130,18],[155,22]].forEach(([t,n])=>{if(S.t>=t&&!S.waves[t]){S.waves[t]=1;const a=rnd(0,6.283);
   for(let i=0;i<n;i++)spawnEnemy('donut',a+rnd(-.4,.4),Math.hypot(W,H)/2+40+rnd(0,60))}});
  BOSS_TIMELINE.forEach(([t,kind])=>{if(S.t>=t&&!S.bossDone[kind]){S.bossDone[kind]=1;mkBoss(kind)}});
  if(S.t>=GAME_TIME)return finish(true);
@@ -477,21 +511,30 @@ function update(dt){
  S.cd.seed-=dt;if(S.cd.seed<=0&&w.seed){S.cd.seed=1.2*cdm;const t=nearest(p.x,p.y);
   if(t){const n=w.seed,base=Math.atan2(t.y-p.y,t.x-p.x);AU.sfx('shoot');
    for(let i=0;i<n;i++){const a=base+(i-(n-1)/2)*.2;S.shots.push({x:p.x,y:p.y,vx:Math.cos(a)*320,vy:Math.sin(a)*320,pierce:w.seed+1,life:2,hitSet:new Set(),rot:0,dm:3})}}}
+
+ /* 彩虹煙火 */
+ S.cd.fw-=dt;if(S.cd.fw<=0&&w.fw){S.cd.fw=1.6*cdm;const n=[4,6,8,10,12][w.fw-1];S.fwA+=.4;AU.sfx('shoot');
+  for(let i=0;i<n;i++){const a=S.fwA+i*6.283/n;S.shots.push({x:p.x,y:p.y,vx:Math.cos(a)*260,vy:Math.sin(a)*260,pierce:2,life:1.2,hitSet:new Set(),rot:0,dm:2,ic:'🌈'})}}
+
  S.shots.forEach(s=>{s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;s.rot+=dt*12;
   for(const e of S.enemies){if(s.pierce<=0)break;if(e.dead||s.hitSet.has(e))continue;
    if(Math.hypot(e.x-s.x,e.y-s.y)<e.r+7){s.hitSet.add(e);s.pierce--;dmg(e,s.dm)}}});
  S.shots=S.shots.filter(s=>s.life>0&&s.pierce>0);
 
+ /* 辣椒光環 */
+ S.chiliT-=dt;if(w.chili&&S.chiliT<=0){S.chiliT=.5;const R=(60+w.chili*12)*ar;
+  for(const e of S.enemies)if(!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<R+e.r)dmg(e,1+w.chili*.6)}
+
  /* 泡泡糖 */
  if(w.gum){S.gumAng+=dt*(2+w.gum*.5);const n=[2,3,4,5,6][w.gum-1];S.gums=[];
-  for(let i=0;i<n;i++){const a=S.gumAng+i*6.283/n;S.gums.push({x:p.x+Math.cos(a)*65,y:p.y+Math.sin(a)*65,r:12})}
+  for(let i=0;i<n;i++){const a=S.gumAng+i*6.283/n;S.gums.push({x:p.x+Math.cos(a)*65*ar,y:p.y+Math.sin(a)*65*ar,r:12})}
   for(const g of S.gums)for(const e of S.enemies){if(e.dead)continue;const dx=e.x-g.x,dy=e.y-g.y,d=Math.hypot(dx,dy)||1;
    if(d<e.r+g.r&&e.gh<=0){e.gh=.4;dmg(e,2);if(!e.boss){e.kx=dx/d*260;e.ky=dy/d*260}}}
  }else S.gums=[];
 
  /* 爆米花 */
  S.cd.pop-=dt;if(S.cd.pop<=0&&w.pop){S.cd.pop=3*cdm;const vis=visible();
-  for(let i=0;i<w.pop&&vis.length;i++){const e=vis[Math.floor(Math.random()*vis.length)];S.pops.push({x:e.x,y:e.y,t:.6,R:50+w.pop*15,boom:false})}}
+  for(let i=0;i<w.pop&&vis.length;i++){const e=vis[Math.floor(Math.random()*vis.length)];S.pops.push({x:e.x,y:e.y,t:.6,R:(50+w.pop*15)*ar,boom:false})}}
  S.pops.forEach(o=>{o.t-=dt;if(o.t<=0&&!o.boom){o.boom=true;o.t=.35;AU.sfx('boom');
   for(const e of S.enemies)if(!e.dead&&Math.hypot(e.x-o.x,e.y-o.y)<o.R+e.r)dmg(e,6)}});
  S.pops=S.pops.filter(o=>o.t>0||!o.boom);
@@ -505,7 +548,7 @@ function update(dt){
    const na=cur+Math.max(-5*dt,Math.min(5*dt,df));m.vx=Math.cos(na)*240;m.vy=Math.sin(na)*240}
   m.x+=m.vx*dt;m.y+=m.vy*dt;
   for(const e of S.enemies){if(e.dead)continue;if(Math.hypot(e.x-m.x,e.y-m.y)<e.r+8){
-    const R=20+w.berry*8;for(const q of S.enemies)if(!q.dead&&Math.hypot(q.x-m.x,q.y-m.y)<R+q.r)dmg(q,q===e?4:2);
+    const R=(20+w.berry*8)*ar;for(const q of S.enemies)if(!q.dead&&Math.hypot(q.x-m.x,q.y-m.y)<R+q.r)dmg(q,q===e?4:2);
     S.fx.push({x:m.x,y:m.y,t:.3,txt:'💥'});AU.sfx('boom');m.life=0;break}}});
  S.missiles=S.missiles.filter(m=>m.life>0);
 
@@ -532,13 +575,13 @@ function update(dt){
  S.cookies=S.cookies.filter(c=>!c.done);
 
  /* 冰淇淋新星 */
- S.cd.nova-=dt;if(S.cd.nova<=0&&w.nova){S.cd.nova=(4.4-w.nova*.4)*cdm;const R=90+w.nova*25;AU.sfx('nova');
+ S.cd.nova-=dt;if(S.cd.nova<=0&&w.nova){S.cd.nova=(4.4-w.nova*.4)*cdm;const R=(90+w.nova*25)*ar;AU.sfx('nova');
   for(const e of S.enemies)if(!e.dead&&Math.hypot(e.x-p.x,e.y-p.y)<R+e.r){dmg(e,3);e.fz=2}
   S.novas.push({x:p.x,y:p.y,t:.5,R})}
  S.novas.forEach(n=>n.t-=dt);S.novas=S.novas.filter(n=>n.t>0);
 
  /* 蜂蜜陷阱 */
- S.cd.honey-=dt;if(S.cd.honey<=0&&w.honey){S.cd.honey=3*cdm;S.puddles.push({x:p.x,y:p.y,r:40+w.honey*8,t:4+w.honey,tk:0})}
+ S.cd.honey-=dt;if(S.cd.honey<=0&&w.honey){S.cd.honey=3*cdm;S.puddles.push({x:p.x,y:p.y,r:(40+w.honey*8)*ar,t:4+w.honey,tk:0})}
  S.puddles.forEach(q=>{q.t-=dt;q.tk-=dt;if(q.tk<=0){q.tk=.5;for(const e of S.enemies)if(!e.dead&&Math.hypot(e.x-q.x,e.y-q.y)<q.r+e.r)dmg(e,1)}});
  S.puddles=S.puddles.filter(q=>q.t>0);
 
@@ -580,7 +623,7 @@ function update(dt){
   const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),m=a.r+b.r;if(d>0&&d<m){const f=(m-d)/2/d;
    if(!a.boss){a.x-=dx*f;a.y-=dy*f}if(!b.boss){b.x+=dx*f;b.y+=dy*f}}}}
  S.enemies=S.enemies.filter(e=>!e.dead&&!e.gone&&(e.boss||Math.hypot(e.x-p.x,e.y-p.y)<1200));
- S.ebul.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){b.life=0;hurt(b.d||7)}});
+ S.ebul.forEach(b=>{b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;if(Math.hypot(b.x-p.x,b.y-p.y)<b.r+p.r){b.life=0;hurt(b.d||5)}});
  S.ebul=S.ebul.filter(b=>b.life>0);
 
  /* 掉落物 */
@@ -602,12 +645,11 @@ function update(dt){
 function emoji(t,x,y,s){ctx.font=s+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,x,y)}
 function draw(){
  const p=S.player,ox=W/2-p.x,oy=(desk?H*.5:H*.4)-p.y;
- ctx.fillStyle='#c6ecb8';ctx.fillRect(0,0,W,H);
- const g=80,sx=((ox%g)+g)%g,sy=((oy%g)+g)%g;ctx.fillStyle='#b4e0a4';
- for(let x=sx-g;x<W+g;x+=g)for(let y=sy-g;y<H+g;y+=g){const ix=Math.round((x-ox)/g),iy=Math.round((y-oy)/g);
-  if((ix*7+iy*13)%3===0){ctx.beginPath();ctx.arc(x,y,6,0,6.283);ctx.fill()}
-  if((ix+iy)%5===0)emoji('🌼',x+20,y+20,14)}
+ ctx.fillStyle='#cdeebf';ctx.fillRect(0,0,W,H);
+ const g=120,x0=Math.floor(-ox/g),y0=Math.floor(-oy/g);ctx.fillStyle='#c3e8b4';
+ for(let ix=x0;ix*g+ox<W;ix++)for(let iy=y0;iy*g+oy<H;iy++)if(((ix+iy)&1)===0)ctx.fillRect(ix*g+ox,iy*g+oy,g,g);
  ctx.save();ctx.translate(ox,oy);
+ if(S.w.chili){const R=(60+S.w.chili*12)*(1+.1*S.w.lens);ctx.fillStyle='rgba(255,90,40,.16)';ctx.strokeStyle='rgba(255,90,40,.55)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(p.x,p.y,R,0,6.283);ctx.fill();ctx.stroke()}
  for(const q of S.puddles){ctx.globalAlpha=.55;ctx.fillStyle='#f6b93b';ctx.beginPath();ctx.arc(q.x,q.y,q.r,0,6.283);ctx.fill();ctx.globalAlpha=1;emoji('🍯',q.x,q.y,20)}
  for(const t of S.trail){ctx.globalAlpha=Math.min(1,t.t);emoji('🧀',t.x,t.y,18)}ctx.globalAlpha=1;
  for(const o of S.pops){if(!o.boom){ctx.strokeStyle='rgba(255,150,50,.7)';ctx.lineWidth=3;ctx.beginPath();ctx.arc(o.x,o.y,o.R*(1-o.t/.6),0,6.283);ctx.stroke();emoji('🌽',o.x,o.y-(o.t*60),18)}
@@ -623,7 +665,7 @@ function draw(){
   if(e.fz>0||S.freeze>0)emoji('❄️',e.x,e.y-e.r,14);
   if(!e.boss&&e.hp<e.mhp){const w=e.r*2;ctx.fillStyle='#0003';ctx.fillRect(e.x-w/2,e.y-e.r-12,w,5);ctx.fillStyle='#ff5b8a';ctx.fillRect(e.x-w/2,e.y-e.r-12,w*Math.max(0,e.hp/e.mhp),5)}}
  for(const b of S.ebul)emoji('🍬',b.x,b.y,b.r*2.4);
- for(const s of S.shots){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.rot);emoji('🌻',0,0,16);ctx.restore()}
+ for(const s of S.shots){ctx.save();ctx.translate(s.x,s.y);ctx.rotate(s.rot);emoji(s.ic||'🌻',0,0,16);ctx.restore()}
  for(const m of S.missiles){if(m.delay>0)continue;ctx.save();ctx.translate(m.x,m.y);ctx.rotate(Math.atan2(m.vy,m.vx));emoji('🍓',0,0,20);ctx.restore()}
  for(const c of S.cookies){ctx.save();ctx.translate(c.x,c.y);ctx.rotate(c.rot);emoji('🍪',0,0,24);ctx.restore()}
  for(const b of S.bolts){ctx.strokeStyle='#fff35e';ctx.lineWidth=4;ctx.shadowColor='#ffb300';ctx.shadowBlur=10;ctx.beginPath();
