@@ -1,7 +1,9 @@
 html,body{margin:0;height:100%;background:#2b2233;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;font-family:'Microsoft JhengHei','PingFang TC',sans-serif}
 #wrap{position:relative;height:100%;aspect-ratio:9/16;max-width:100%;margin:0 auto}
+#wrap.desk{width:100%;height:100%;aspect-ratio:auto;max-width:none}
 canvas{width:100%;height:100%;display:block;background:#bfe8b0}
-.panel{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;background:rgba(255,230,240,.96);text-align:center;color:#8a4b6a;padding:14px 10px;overflow-y:auto;box-sizing:border-box}
+#speedBtn{position:absolute;top:46px;right:8px;z-index:2;display:none;background:#ffffffcc;color:#8a4b6a;border:2px solid #ff9ec4;border-radius:14px;padding:4px 10px;font-size:14px;font-weight:bold;cursor:pointer}
+.panel{position:absolute;inset:0;z-index:5;display:none;flex-direction:column;align-items:center;background:rgba(255,230,240,.96);text-align:center;color:#8a4b6a;padding:14px 10px;overflow-y:auto;box-sizing:border-box}
 .panel.show{display:flex}
 .panel.mid{justify-content:center}
 .panel h1{margin:6px 0;font-size:6vmin}
@@ -17,3 +19,11 @@ canvas{width:100%;height:100%;display:block;background:#bfe8b0}
 .tag.up{background:#58b86a}
 .tag.pas{background:#6a8be0}
 #desc{font-size:13px;min-height:34px;margin:4px 0}
+.hint{font-size:12px;opacity:.75;margin:4px 0 10px}
+.desk .panel{padding:24px 12%}
+.desk .panel h1{font-size:34px}
+.desk .panel h3{font-size:18px}
+.desk .opt{width:calc(25% - 8px);max-width:170px;min-width:110px;font-size:14px}
+.desk .opt:hover,.desk .card:hover{border-color:#ff5b9a;transform:translateY(-2px)}
+.desk .card{max-width:560px;font-size:18px}
+.desk #desc{font-size:16px}
