@@ -662,8 +662,8 @@ function draw(){
  for(const o of S.pops){if(!o.boom){circ(p.x*0+o.x,o.y,o.R*(1-o.t/.6),null,'rgba(255,120,30,.9)',4);emoji('🌽',o.x,o.y-(o.t*60),28)}
   else{circ(o.x,o.y,o.R,'rgba(255,240,150,.7)','rgba(255,160,0,.9)',4);emoji('🍿',o.x,o.y,o.R*1.2)}}
  for(const n of S.novas){circ(n.x,n.y,n.R*(1-n.t/.5),'rgba(180,230,255,.35)','rgba(60,160,255,.95)',8)}
- for(const q of S.gems){circ(q.x,q.y,13,'rgba(255,220,0,.4)');emoji('🌻',q.x,q.y,22)}
- for(const o of S.drops){if(o.life<3&&Math.floor(S.t*8)%2)continue;const pu=1+.12*Math.sin(S.t*6);circ(o.x,o.y,(o.big?30:22)*pu,'rgba(255,255,255,.7)','#ffb300',3);emoji(o.ic,o.x,o.y,o.big?46:34)}
+ for(const q of S.gems){circ(q.x,q.y,13,'rgba(255,220,0,.4)');tataSprite('uiIcons',8,q.x,q.y,25)}
+ for(const o of S.drops){if(o.life<3&&Math.floor(S.t*8)%2)continue;const pu=1+.12*Math.sin(S.t*6);circ(o.x,o.y,(o.big?30:22)*pu,'rgba(255,255,255,.7)','#ffb300',3);drawDrop(o.k,o.x,o.y,o.big?46:34)}
  for(const t of S.turrets)emoji('🧁',t.x,t.y,40);
  for(const e of S.enemies){
   if(e.st==='wind'){circ(e.x,e.y,e.r+12,'rgba(255,60,60,.25)','rgba(255,40,40,.9)',6)}
@@ -687,7 +687,7 @@ function draw(){
  circ(p.x,p.y+22,p.r,'#73886722');
  tataHero(p);ctx.globalAlpha=1;
  if(S.shield>0)circ(p.x,p.y,p.r+16,'rgba(255,215,0,.15)','rgba(255,200,0,.95)',5);
- for(const gm of S.gums)circ(gm.x,gm.y,gm.r,'rgba(255,110,190,.95)','#fff',3);
+ for(const gm of S.gums){ctx.save();ctx.translate(gm.x,gm.y);ctx.rotate(S.gumAng*.3);drawItem('gum',0,0,52);ctx.restore();}
  for(const f of S.fx){if(f.damage){drawCuteDamage(f);}else if(f.c){ctx.globalAlpha=Math.min(1,f.t*2);ctx.font=`bold ${f.sz||18}px sans-serif`;ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.c;ctx.fillText(f.txt,f.x,f.y);ctx.globalAlpha=1}else emoji(f.txt,f.x,f.y,30)}
  ctx.restore();
  if(S.freeze>0){ctx.fillStyle='rgba(150,220,255,.2)';ctx.fillRect(0,0,W,H)}
@@ -710,7 +710,7 @@ function draw(){
  ctx.fillStyle='#0006';ctx.fillRect(8,28,bw,28);
  ctx.fillStyle=hr>.5?'#4cd964':hr>.25?'#ffcc00':'#ff3b30';ctx.fillRect(8,28,bw*hr,28);
  ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.strokeRect(8,28,bw,28);
- const ht=`❤️ ${Math.ceil(p.hp)} / ${p.maxhp}`;ctx.font='bold 17px sans-serif';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(ht,16,43);ctx.fillStyle='#fff';ctx.fillText(ht,16,43);
+ tataSprite('uiIcons',9,24,43,24);const ht=`${Math.ceil(p.hp)} / ${p.maxhp}`;ctx.font='bold 17px sans-serif';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(ht,43,43);ctx.fillStyle='#fff';ctx.fillText(ht,43,43);
  let buf='';if(S.rev>0)buf+=`📿x${S.rev} `;if(S.shield>0)buf+=`🛡️${Math.ceil(S.shield)} `;if(S.rage>0)buf+=`⚡${Math.ceil(S.rage)} `;if(S.slow>0)buf+=`⏳${Math.ceil(S.slow)} `;if(S.freeze>0)buf+=`❄️${Math.ceil(S.freeze)} `;
  if(buf){ctx.font='20px sans-serif';ctx.fillStyle='#6a3550';ctx.textAlign='left';ctx.fillText(buf,8,76)}
  const rem=Math.max(0,Math.ceil(GAME_TIME-S.t)),m=Math.floor(rem/60),sc=String(rem%60).padStart(2,'0');

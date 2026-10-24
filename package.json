@@ -1,10 +1,10 @@
 {
   "name": "tata-adventure",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "start": "node serve.cjs",
-    "test": "node check.cjs && node check-growth.cjs"
+    "test": "node check.cjs && node check-growth.cjs && node check-art.cjs"
   },
   "devDependencies": {
     "playwright": "1.58.2"
