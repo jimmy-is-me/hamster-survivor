@@ -30,7 +30,7 @@
   SAVE.tot.best=Math.max(SAVE.tot.best||0,round);
   if(win){SAVE.tot.wins++;ach('win');if(speedIdx===5)ach('speed3')}
   if(SAVE.tot.kills>=2000)ach('total2000');persist();AU.mode='menu';AU.sfx(win?'win':'lose');
-  $('endT').textContent=win?`🎉 第 ${round} 輪通關`:'💥 倉鼠球破裂了';
+  $('endT').textContent=win?`🎉 第 ${round} 輪通關`:'💥 塔塔醬需要休息了';
   $('endS').textContent=`${S.ch.name}｜${S.D.n}｜總存活 ${Math.floor(total)} 秒｜擊殺 ${S.kills}｜Lv.${S.lv}`;
   $('endA').textContent=S.newAch.map(a=>`${a.ic} ${a.name}`).join('、');
   $('nextBtn').hidden=!win;const raw=baseDifficulty+round;

@@ -409,7 +409,7 @@ function finish(win){
  if(win){SAVE.tot.wins++;ach('win');if(speedIdx===5)ach('speed3')}
  if(SAVE.tot.kills>=2000)ach('total2000');
  persist();AU.mode='menu';AU.sfx(win?'win':'lose');
- $('endT').textContent=win?'🎉 通關成功!':'💥 倉鼠球破裂了…';
+ $('endT').textContent=win?'🎉 通關成功!':'💥 塔塔醬需要休息了…';
  $('endS').textContent=`${S.ch.name}|${S.D.n}|存活 ${Math.floor(S.t)} 秒|擊殺 ${S.kills}|等級 ${S.lv}`;
  $('endA').innerHTML=S.newAch.length?'🏆 本局新成就<br>'+S.newAch.map(a=>`${a.ic} ${a.name}`).join('<br>'):'';
  $('end').classList.add('show');
@@ -650,11 +650,11 @@ function emoji(t,x,y,s){ctx.font=s+'px serif';ctx.textAlign='center';ctx.textBas
 function circ(x,y,r,fill,stroke,lw){ctx.beginPath();ctx.arc(x,y,r,0,6.283);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw||3;ctx.stroke()}}
 function draw(){
  const p=S.player,z=zoom(),cy=desk?H*.5:H*.4;
- ctx.fillStyle='#cdeebf';ctx.fillRect(0,0,W,H);
+ ctx.fillStyle='#e6eddb';ctx.fillRect(0,0,W,H);
  const sx=S.shake>0?rnd(-1,1)*S.shake*20:0,sy=S.shake>0?rnd(-1,1)*S.shake*20:0;
  ctx.save();ctx.translate(W/2+sx,cy+sy);ctx.scale(z,z);ctx.translate(-p.x,-p.y);
- const g=120,L=p.x-W/(2*z),R=p.x+W/(2*z),T=p.y-cy/z,B=p.y+(H-cy)/z;ctx.fillStyle='#c3e8b4';
- for(let ix=Math.floor(L/g);ix*g<R;ix++)for(let iy=Math.floor(T/g);iy*g<B;iy++)if(((ix+iy)&1)===0)ctx.fillRect(ix*g,iy*g,g,g);
+ const g=120,L=p.x-W/(2*z),R=p.x+W/(2*z),T=p.y-cy/z,B=p.y+(H-cy)/z;ctx.fillStyle='#dce7cd';
+ for(let ix=Math.floor(L/g);ix*g<R;ix++)for(let iy=Math.floor(T/g);iy*g<B;iy++){const x=ix*g+42,y=iy*g+38;ctx.fillStyle='#b9cba6';ctx.fillRect(x,y,2,10);ctx.fillStyle=(ix+iy)%3===0?'#e4b7b4':'#f6e5a9';ctx.beginPath();ctx.arc(x+1,y-2,3,0,6.283);ctx.fill();}
  if(S.w.chili){const r=(60+S.w.chili*12)*(1+.1*S.w.lens);circ(p.x,p.y,r,'rgba(255,90,40,.18)','rgba(255,90,40,.7)',4)}
  for(const q of S.puddles){ctx.globalAlpha=.6;circ(q.x,q.y,q.r,'#f6b93b');ctx.globalAlpha=1;emoji('🍯',q.x,q.y,30)}
  for(const t of S.trail){ctx.globalAlpha=Math.min(1,t.t);emoji('🧀',t.x,t.y,26)}ctx.globalAlpha=1;
@@ -668,7 +668,7 @@ function draw(){
   if(e.st==='wind'){circ(e.x,e.y,e.r+12,'rgba(255,60,60,.25)','rgba(255,40,40,.9)',6)}
   if(e.flee)circ(e.x,e.y,e.r+12,'rgba(255,215,0,.4)');
   if((e.rng||e.mage)&&e.shootT!==undefined&&e.shootT<.7){const pu=.5+.5*Math.sin(S.t*30);circ(e.x,e.y,e.r+10+pu*6,'rgba(255,50,50,.25)','#ff2d55',4);emoji('❗',e.x,e.y-e.r-18,24)}
-  emoji(e.e,e.x,e.y,e.r*3);
+  tataEnemy(e);
   if(e.hit>0)circ(e.x,e.y,e.r+6,'rgba(255,255,255,.55)');
   if(e.fz>0||S.freeze>0)emoji('❄️',e.x,e.y-e.r,20);
   if(!e.boss&&e.hp<e.mhp){const bw=Math.max(e.r*2.4,32);ctx.fillStyle='#0004';ctx.fillRect(e.x-bw/2,e.y-e.r-18,bw,8);ctx.fillStyle='#ff3b6b';ctx.fillRect(e.x-bw/2,e.y-e.r-18,bw*Math.max(0,e.hp/e.mhp),8)}}
@@ -683,8 +683,8 @@ function draw(){
  if(S.ch.aura)circ(p.x,p.y,110,null,'rgba(120,200,255,.5)',3);
  if(S.rage>0)circ(p.x,p.y,p.r+20,null,'rgba(255,60,60,.8)',4);
  ctx.globalAlpha=p.inv>0&&Math.floor(S.t*12)%2?.4:1;
- circ(p.x,p.y,p.r+6,'rgba(200,235,255,.5)','#fff',4);
- emoji(S.ch.ic,p.x,p.y,p.r*2.1);ctx.globalAlpha=1;
+ circ(p.x,p.y+22,p.r,'#73886722');
+ tataHero(p);ctx.globalAlpha=1;
  if(S.shield>0)circ(p.x,p.y,p.r+16,'rgba(255,215,0,.15)','rgba(255,200,0,.95)',5);
  for(const gm of S.gums)circ(gm.x,gm.y,gm.r,'rgba(255,110,190,.95)','#fff',3);
  for(const f of S.fx){if(f.c){ctx.globalAlpha=Math.min(1,f.t*2);ctx.font=`bold ${f.sz||18}px sans-serif`;ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.c;ctx.fillText(f.txt,f.x,f.y);ctx.globalAlpha=1}else emoji(f.txt,f.x,f.y,30)}
@@ -721,8 +721,8 @@ function draw(){
   ctx.fillStyle='#6a3550';ctx.font='bold 18px sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#fffc';ctx.strokeText(BOSSES[bo.kind].name,W/2,150);ctx.fillText(BOSSES[bo.kind].name,W/2,150)}
  const per=Math.max(1,Math.floor((W-16)/54)),by=desk?H-70:H*.8-30;let ni=0;
  for(const k of WKEYS){if(S.w[k]>0){const col=ni%per,row=Math.floor(ni/per),x=8+col*54+26,y=by-row*52;
-  ctx.font='30px serif';ctx.textAlign='center';ctx.fillText(WEAPONS[k].ic,x,y);ctx.font='bold 13px sans-serif';ctx.fillStyle='#6a3550';ctx.fillText('Lv'+S.w[k],x,y+22);ni++}}
- if(S.warn){ctx.font='bold 30px sans-serif';ctx.textAlign='center';ctx.lineWidth=6;ctx.strokeStyle='#fffd';ctx.strokeText(S.warn.txt,W/2,H*.3);ctx.fillStyle='#e0306a';ctx.fillText(S.warn.txt,W/2,H*.3)}
+  tataSprite('items',itemCells[k],x,y,38);ctx.textAlign='center';ctx.font='bold 13px sans-serif';ctx.fillStyle='#6a3550';ctx.fillText('Lv'+S.w[k],x,y+22);ni++}}
+ if(S.warn){ctx.font='bold '+Math.min(30,Math.floor((W-24)/Math.max(1,S.warn.txt.length)))+'px sans-serif';ctx.textAlign='center';ctx.lineWidth=6;ctx.strokeStyle='#fffd';ctx.strokeText(S.warn.txt,W/2,H*.3);ctx.fillStyle='#e0306a';ctx.fillText(S.warn.txt,W/2,H*.3)}
  if(state==='hold'){ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.font='bold 38px sans-serif';ctx.textAlign='center';ctx.fillText('⏸ 暫停中(按 P 繼續)',W/2,H/2)}
 }
 function loop(now){
