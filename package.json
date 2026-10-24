@@ -1,1 +1,12 @@
-{"name":"tata-adventure","version":"1.0.0","private":true,"scripts":{"start":"node serve.cjs","test":"node check.cjs"},"devDependencies":{"playwright":"1.58.2"}}
+{
+  "name": "tata-adventure",
+  "version": "1.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node serve.cjs",
+    "test": "node check.cjs && node check-growth.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.58.2"
+  }
+}

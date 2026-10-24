@@ -294,6 +294,7 @@ const up=e=>{if(S&&S.joy.id===e.pointerId){S.joy.on=false;S.joy.dx=S.joy.dy=0}};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 const cyc=(arr,cur,d)=>arr[(arr.indexOf(cur)+d+arr.length)%arr.length];
 addEventListener('keydown',e=>{
+ if(/BUTTON|INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
  const k=e.key.toLowerCase();
  if(S)S.keys[k]=1;
  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
@@ -314,7 +315,7 @@ addEventListener('keydown',e=>{
   else if(k==='r')$('rerollBtn').click();
  }else if(state==='end'){
   if(k==='enter')$('againBtn').click();
- }else if(k==='p'||k==='escape'){
+ }else if((state==='play'||state==='hold')&&(k==='p'||k==='escape')){
   state=state==='play'?'hold':'play';last=performance.now();
  }
 });
@@ -353,7 +354,7 @@ function hurt(n){
  const p=S.player,w=S.w;
  if(p.inv>0||S.shield>0||state!=='play')return;
  const dm=Math.max(1,Math.round(n*(1+S.t/BAL.dmgGrow)*S.D.dm*(1-.12*w.helmet)));
- p.hp-=dm;p.inv=BAL.invBase*S.ch.inv+.15*w.boots;S.flash=.3;S.shake=.25;
+ recordHurt(Math.min(p.hp,dm));p.hp-=dm;p.inv=BAL.invBase*S.ch.inv+.15*w.boots;S.flash=.3;S.shake=.25;
  S.fx.push({x:p.x,y:p.y-34,t:.9,txt:'-'+dm,c:'#ff3b30',sz:30});AU.sfx('hurt');
  if(w.cape){for(const e of S.enemies){if(e.dead)continue;const d=Math.hypot(e.x-p.x,e.y-p.y);
   if(d<90+e.r){dmg(e,6*w.cape);if(!e.boss){e.kx=(e.x-p.x)/(d||1)*320;e.ky=(e.y-p.y)/(d||1)*320}}}}
@@ -367,8 +368,8 @@ function dmg(e,n){
  const w=S.w;let m=(1+.2*w.power)*S.ch.dm,c=false;
  if(S.rage>0)m*=1.8;
  if(Math.random()<S.ch.crit+.08*w.clover+.05*w.ring){m*=2+.25*w.ring;c=true}
- e.hp-=n*m;e.hit=.12;AU.sfx('hit');
- if(S.fx.length<70)S.fx.push({x:e.x+rnd(-10,10),y:e.y-e.r,t:.5,txt:String(Math.max(1,Math.round(n*m))),c:c?'#ff5b1f':'#ffffff',sz:c?26:18});
+ e.hp-=n*m;recordDamage(e,n*m,c);e.hit=.12;AU.sfx('hit');
+ if(S.fx.length<70)S.fx.push({x:e.x+rnd(-10,10),y:e.y-e.r,t:.85,duration:.85,damage:true,crit:c,slot:damageSequence++,txt:String(Math.max(1,Math.round(n*m)))});
  if(e.hp<=0)die(e);
 }
 function die(e){
@@ -687,7 +688,7 @@ function draw(){
  tataHero(p);ctx.globalAlpha=1;
  if(S.shield>0)circ(p.x,p.y,p.r+16,'rgba(255,215,0,.15)','rgba(255,200,0,.95)',5);
  for(const gm of S.gums)circ(gm.x,gm.y,gm.r,'rgba(255,110,190,.95)','#fff',3);
- for(const f of S.fx){if(f.c){ctx.globalAlpha=Math.min(1,f.t*2);ctx.font=`bold ${f.sz||18}px sans-serif`;ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.c;ctx.fillText(f.txt,f.x,f.y);ctx.globalAlpha=1}else emoji(f.txt,f.x,f.y,30)}
+ for(const f of S.fx){if(f.damage){drawCuteDamage(f);}else if(f.c){ctx.globalAlpha=Math.min(1,f.t*2);ctx.font=`bold ${f.sz||18}px sans-serif`;ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#0009';ctx.strokeText(f.txt,f.x,f.y);ctx.fillStyle=f.c;ctx.fillText(f.txt,f.x,f.y);ctx.globalAlpha=1}else emoji(f.txt,f.x,f.y,30)}
  ctx.restore();
  if(S.freeze>0){ctx.fillStyle='rgba(150,220,255,.2)';ctx.fillRect(0,0,W,H)}
  if(S.slow>0){ctx.fillStyle='rgba(180,140,255,.12)';ctx.fillRect(0,0,W,H)}
